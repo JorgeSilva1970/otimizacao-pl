@@ -1,0 +1,74 @@
+{
+  "nome": "Dieta de custo mínimo",
+  "sentido": "min",
+  "variaveis": [
+    {
+      "nome": "aveia",
+      "coef": 0.3,
+      "legenda": "Porções de aveia por dia",
+      "tipo": "Contínua",
+      "lb": 0.0,
+      "ub": null
+    },
+    {
+      "nome": "leite",
+      "coef": 0.25,
+      "legenda": "Copos de leite por dia",
+      "tipo": "Contínua",
+      "lb": 0.0,
+      "ub": 4.0
+    },
+    {
+      "nome": "ovos",
+      "coef": 0.2,
+      "legenda": "Ovos por dia",
+      "tipo": "Contínua",
+      "lb": 0.0,
+      "ub": 3.0
+    },
+    {
+      "nome": "feijao",
+      "coef": 0.35,
+      "legenda": "Porções de feijão por dia",
+      "tipo": "Contínua",
+      "lb": 0.0,
+      "ub": 4.0
+    }
+  ],
+  "restricoes": [
+    {
+      "nome": "Proteína",
+      "coefs": {
+        "aveia": 5.0,
+        "leite": 8.0,
+        "ovos": 6.0,
+        "feijao": 9.0
+      },
+      "sinal": ">=",
+      "rhs": 60.0,
+      "legenda": "Gramas de proteína (mínimo diário)"
+    },
+    {
+      "nome": "Energia",
+      "coefs": {
+        "aveia": 150.0,
+        "leite": 120.0,
+        "ovos": 70.0,
+        "feijao": 230.0
+      },
+      "sinal": ">=",
+      "rhs": 2000.0,
+      "legenda": "Quilocalorias (mínimo diário)"
+    },
+    {
+      "nome": "Fibra",
+      "coefs": {
+        "aveia": 4.0,
+        "feijao": 8.0
+      },
+      "sinal": ">=",
+      "rhs": 25.0,
+      "legenda": "Gramas de fibra (mínimo diário)"
+    }
+  ]
+}

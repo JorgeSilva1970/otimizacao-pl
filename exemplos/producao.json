@@ -1,0 +1,44 @@
+{
+  "nome": "Produção de mesas e cadeiras",
+  "sentido": "max",
+  "variaveis": [
+    {
+      "nome": "mesas",
+      "coef": 70.0,
+      "legenda": "Mesas produzidas por semana",
+      "tipo": "Contínua",
+      "lb": 0.0,
+      "ub": null
+    },
+    {
+      "nome": "cadeiras",
+      "coef": 50.0,
+      "legenda": "Cadeiras produzidas por semana",
+      "tipo": "Contínua",
+      "lb": 0.0,
+      "ub": null
+    }
+  ],
+  "restricoes": [
+    {
+      "nome": "Madeira",
+      "coefs": {
+        "mesas": 4.0,
+        "cadeiras": 3.0
+      },
+      "sinal": "<=",
+      "rhs": 240.0,
+      "legenda": "Metros de madeira disponíveis por semana"
+    },
+    {
+      "nome": "Acabamento",
+      "coefs": {
+        "mesas": 2.0,
+        "cadeiras": 1.0
+      },
+      "sinal": "<=",
+      "rhs": 100.0,
+      "legenda": "Horas de acabamento disponíveis por semana"
+    }
+  ]
+}
