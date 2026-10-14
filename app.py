@@ -15,7 +15,7 @@ import streamlit as st
 
 from grafico import desenhar_2d
 from lp_core import (EXEMPLOS, SENTIDOS, SINAIS, TIPOS, Modelo, fmt, formulacao_latex,
-                     formulacao_texto, modelo_em_branco, resolver)
+                     formulacao_texto, modelo_em_branco, parsear_expressao, resolver)
 from tabelas import (alinhar_restricoes, df_restricoes, df_variaveis, excel_de_modelo,
                      excel_de_resultado, modelo_de_excel, modelo_de_tabelas, nomes_variaveis,
                      texto)
@@ -59,6 +59,38 @@ def abrir_ficheiro() -> None:
                                f"e {len(m.restricoes)} restrições.")
     except Exception as e:  # noqa: BLE001
         ss.msg_import = ("erro", f"Não foi possível abrir o ficheiro: {e}")
+
+
+def aplicar_expressao_objetivo() -> None:
+    """Lê a expressão da função objetivo e actualiza a tabela de variáveis."""
+    expr = ss.get("expr_objetivo", "").strip()
+    if not expr:
+        return
+    try:
+        termos = parsear_expressao(expr)
+    except ValueError as e:
+        ss.msg_expr = ("erro", str(e))
+        return
+    coefs_novos = {v: c for c, v in termos}
+    nova_base = ss.vars_base.copy()
+    nomes_atuais = list(nova_base["Nome"].fillna("").astype(str))
+    # Atualizar coeficientes de variáveis existentes
+    for i, nome in enumerate(nomes_atuais):
+        if nome in coefs_novos:
+            nova_base.at[i, "Coef. objetivo"] = coefs_novos[nome]
+    # Acrescentar variáveis novas
+    novos = [(v, c) for v, c in coefs_novos.items() if v not in nomes_atuais]
+    if novos:
+        novas_linhas = pd.DataFrame(
+            [[v, "", "Contínua", 0.0, None, c] for v, c in novos],
+            columns=["Nome", "Legenda", "Tipo", "Limite inferior", "Limite superior", "Coef. objetivo"],
+        )
+        for col in ("Limite inferior", "Limite superior", "Coef. objetivo"):
+            novas_linhas[col] = pd.to_numeric(novas_linhas[col], errors="coerce")
+        nova_base = pd.concat([nova_base, novas_linhas], ignore_index=True)
+    ss.vars_base = nova_base
+    ss.versao = ss.get("versao", 0) + 1
+    ss.msg_expr = ("ok", "Expressão aplicada. Verifica e completa a tabela de variáveis.")
 
 
 def hash_modelo(m: Modelo) -> str:
@@ -115,6 +147,25 @@ tab_modelo, tab_sol, tab_graf, tab_fich = st.tabs(
 # --------------------------------------------------------------------------- #
 with tab_modelo:
     st.subheader("Variáveis de decisão e função objetivo")
+
+    with st.expander("Escrever a função objetivo como expressão"):
+        st.caption(
+            "Escreve a expressão e clica em **Aplicar** — as variáveis são criadas "
+            "automaticamente e os coeficientes das variáveis existentes são actualizados. "
+            "Exemplo: `5 x1 + 3*x2 - 2 x3` ou `Z = mesas + 0.5 cadeiras`"
+        )
+        c_expr, c_btn = st.columns([5, 1])
+        c_expr.text_input(
+            "Expressão da função objetivo",
+            placeholder="ex.: 5 x1 + 3*x2 - 2 x3",
+            key="expr_objetivo",
+            label_visibility="collapsed",
+        )
+        c_btn.button("Aplicar", on_click=aplicar_expressao_objetivo, use_container_width=True)
+        msg_expr = ss.get("msg_expr")
+        if msg_expr:
+            (st.success if msg_expr[0] == "ok" else st.error)(msg_expr[1])
+
     df_var = st.data_editor(
         ss.vars_base,
         key=f"ed_vars_{ss.versao}",

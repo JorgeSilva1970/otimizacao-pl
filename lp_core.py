@@ -13,6 +13,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import re
 import time
 import unicodedata
 from dataclasses import asdict, dataclass, field
@@ -111,6 +112,34 @@ def _limpo(x: float) -> float:
     if abs(x) < 1e-7:
         return 0.0
     return round(x, 8)
+
+
+def parsear_expressao(expr: str) -> list[tuple[float, str]]:
+    """
+    Converte uma expressão linear textual em [(coef, nome_variável), ...].
+
+    Exemplos aceites:
+        "5 x1 + 3*x2 - x3"
+        "Z = 5x1 + 3x2"
+        "-mesas + 2 cadeiras"
+        "0.5*P1 - 1.2 P2 + P3"
+
+    Lança ValueError se não encontrar nenhuma variável.
+    """
+    expr = re.sub(r'\s+', ' ', expr.strip())
+    expr = re.sub(r'^[Zz]\s*=\s*', '', expr).strip()
+    if not expr:
+        raise ValueError("Expressão vazia.")
+    if expr[0] not in ('+', '-'):
+        expr = '+' + expr
+    padrao = r'([+-])\s*(\d+(?:\.\d*)?|\.\d+)?\s*\*?\s*([a-zA-Z_][a-zA-Z0-9_]*)'
+    termos = [
+        ((1.0 if s == '+' else -1.0) * (float(c) if c else 1.0), v)
+        for s, c, v in re.findall(padrao, expr)
+    ]
+    if not termos:
+        raise ValueError("Não foi possível reconhecer variáveis. Usa o formato: 5 x1 + 3 x2.")
+    return termos
 
 
 # --------------------------------------------------------------------------- #
@@ -535,8 +564,13 @@ def modelo_em_branco() -> Modelo:
     return Modelo(
         nome="Novo problema",
         sentido="max",
-        variaveis=[Variavel("x1"), Variavel("x2")],
-        restricoes=[Restricao("R1", {"x1": 0.0, "x2": 0.0}, "<=", 0.0)],
+        variaveis=[
+            Variavel("x1", coef=1.0, legenda="Primeira variável de decisão"),
+            Variavel("x2", coef=1.0, legenda="Segunda variável de decisão"),
+        ],
+        restricoes=[
+            Restricao("R1", {"x1": 1.0, "x2": 1.0}, "<=", 10.0, "Primeira restrição"),
+        ],
     )
 
 
