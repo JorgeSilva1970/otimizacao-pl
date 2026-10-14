@@ -299,18 +299,40 @@ with tab_sol:
 with tab_graf:
     if modelo is None or erros:
         st.info("Corrige os erros do modelo para ver o gráfico.")
-    elif len(modelo.variaveis) != 2:
-        st.info(f"O método gráfico só se aplica a problemas com 2 variáveis. "
-                f"Este modelo tem {len(modelo.variaveis)}.")
+    elif len(modelo.variaveis) < 2:
+        st.info("O método gráfico requer pelo menos 2 variáveis de decisão.")
     else:
+        nomes_var = [v.nome for v in modelo.variaveis]
+        ix1, ix2 = 0, 1
+
+        if len(modelo.variaveis) > 2:
+            st.caption(
+                "Com mais de 2 variáveis é mostrada uma **projeção** no plano das duas variáveis "
+                "selecionadas. As restantes são fixadas nos valores ótimos (se o modelo foi resolvido) "
+                "ou no limite inferior. As restrições marcadas com **\\*** foram projetadas "
+                "(o seu lado direito foi ajustado para absorver as variáveis fixas)."
+            )
+            col1, col2 = st.columns(2)
+            nome_v1 = col1.selectbox("Eixo horizontal (x)", nomes_var, index=0, key="graf_v1")
+            nome_v2 = col2.selectbox(
+                "Eixo vertical (y)",
+                [n for n in nomes_var if n != nome_v1],
+                key="graf_v2",
+            )
+            ix1 = nomes_var.index(nome_v1)
+            ix2 = nomes_var.index(nome_v2)
+
         r = ss.get("resultado")
         r_ok = r if (r is not None and ss.resultado_hash == hash_modelo(modelo)) else None
-        fig, vertices = desenhar_2d(modelo, r_ok)
+        fig, vertices = desenhar_2d(modelo, r_ok, ix1, ix2)
         st.plotly_chart(fig)
         if r_ok is None:
             st.caption("Resolve o modelo para ver o ponto ótimo e a reta da função objetivo.")
         if vertices:
-            st.subheader("Vértices da região admissível")
+            titulo_verts = "Vértices da região admissível"
+            if len(modelo.variaveis) > 2:
+                titulo_verts += " (projeção)"
+            st.subheader(titulo_verts)
             dfv = pd.DataFrame(vertices)
             reais = dfv[dfv["Observação"] == ""]
             if not reais.empty:
